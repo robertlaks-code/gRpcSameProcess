@@ -1,0 +1,17 @@
+{
+  "name": "@grpc-demo/network-client-server",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@grpc-demo/service": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

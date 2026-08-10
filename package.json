@@ -1,0 +1,18 @@
+{
+  "name": "grpc-crud-demo",
+  "private": true,
+  "version": "1.0.0",
+  "license": "UNLICENSED",
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "yarn workspace @grpc-demo/service build && yarn workspace @grpc-demo/network-client-server build && yarn workspace @grpc-demo/in-process-fast-client build",
+    "start:network": "yarn workspace @grpc-demo/network-client-server start",
+    "start:local": "yarn workspace @grpc-demo/in-process-fast-client start"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

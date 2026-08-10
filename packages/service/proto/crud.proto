@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package crud.v1;
+
+// Simple CRUD service over "Item" resources.
+//
+// This file is the single source of truth for the service contract. It is
+// loaded at runtime by both the gRPC server and the real gRPC client, and it
+// does not change when the service implementation moves from an in-process
+// library into a network-separated deployment.
+service ItemService {
+  rpc CreateItem (CreateItemRequest) returns (Item);
+  rpc GetItem (GetItemRequest) returns (Item);
+  rpc UpdateItem (UpdateItemRequest) returns (Item);
+  rpc DeleteItem (DeleteItemRequest) returns (DeleteItemResponse);
+  rpc ListItems (ListItemsRequest) returns (ListItemsResponse);
+}
+
+message Item {
+  string id = 1;
+  string name = 2;
+  string payload = 3;
+  int64 created_at = 4;
+  int64 updated_at = 5;
+}
+
+message CreateItemRequest {
+  string name = 1;
+  string payload = 2;
+}
+
+message GetItemRequest {
+  string id = 1;
+}
+
+message UpdateItemRequest {
+  string id = 1;
+  string name = 2;
+  string payload = 3;
+}
+
+message DeleteItemRequest {
+  string id = 1;
+}
+
+message DeleteItemResponse {
+}
+
+message ListItemsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message ListItemsResponse {
+  repeated Item items = 1;
+  string next_page_token = 2;
+}
