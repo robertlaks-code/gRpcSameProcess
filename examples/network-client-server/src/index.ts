@@ -1,7 +1,6 @@
 import {
-  InMemoryItemService,
-  startGrpcServer,
-  createNetworkClient,
+  ClientTransport,
+  createItemServiceClient,
   runCrudDemo,
   benchmarkCreate,
 } from "@grpc-demo/service";
@@ -12,23 +11,23 @@ import {
  * server binds a socket, the client dials it, and every call goes through
  * real proto serialization over that socket.
  *
- * When the ItemService is ready to move out of this process, nothing here
- * changes except the address passed to createNetworkClient.
+ * createItemServiceClient(ClientTransport.NETWORK) is the only thing this
+ * file needs to know about -- it hides exactly how the server and client
+ * are wired up, and gives back a shutdown() hook that releases everything
+ * (server + socket) regardless of transport.
  */
 async function main() {
-  const impl = new InMemoryItemService();
-  const { server, address } = await startGrpcServer(impl, "127.0.0.1:0");
+  const { client, address, shutdown } = await createItemServiceClient(ClientTransport.NETWORK);
   console.log(`gRPC server listening on ${address}`);
 
-  const client = createNetworkClient(address);
+  try {
+    await runCrudDemo(client, "network client -> gRPC server (TCP loopback socket)");
 
-  await runCrudDemo(client, "network client -> gRPC server (loopback socket)");
-
-  const avgMs = await benchmarkCreate(client, 1000);
-  console.log(`\naverage createItem latency over network client: ${avgMs.toFixed(3)}ms`);
-
-  client.close();
-  server.forceShutdown();
+    const avgMs = await benchmarkCreate(client, 200);
+    console.log(`\naverage createItem latency over network client: ${avgMs.toFixed(3)}ms`);
+  } finally {
+    await shutdown();
+  }
 }
 
 main().catch((err) => {

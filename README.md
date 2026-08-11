@@ -35,6 +35,15 @@ call-site changes.
   (`createLocalClient(impl)`) that implements the same `ItemServiceApi`
   interface but calls straight into the implementation — no proto
   encode/decode, no socket.
+- `packages/service/src/clientFactory.ts` — `createItemServiceClient(transport)`,
+  a small dependency-injection style factory. Pass a `ClientTransport`
+  (`LOCAL`, `NETWORK`, or `UNIX_DOMAIN_SOCKETS`) and get back `{ client,
+  address?, shutdown() }`. This is the one place that knows how to stand up
+  each transport's server (if any) and pick its address; `shutdown()`
+  closes the client and releases whatever the client doesn't release on its
+  own (the gRPC server, its socket, and — for Unix domain sockets — the
+  socket file on disk). Every example below is built on this instead of
+  wiring `InMemoryItemService` + `startGrpcServer` + `create*Client` by hand.
 - `examples/network-client-server` — server and client in one process,
   talking over a real TCP loopback gRPC socket.
 - `examples/unix-socket-client-server` — server and client in one process,
@@ -45,24 +54,26 @@ call-site changes.
 - `examples/in-process-fast-client` — server and client in one process,
   talking through the zero-serialization local client.
 
-All three examples run the identical CRUD sequence (`runCrudDemo` in
-`packages/service/src/demo.ts`) and print the average latency of 200
+All three examples call `createItemServiceClient` with a different
+`ClientTransport` value, run the identical CRUD sequence (`runCrudDemo` in
+`packages/service/src/demo.ts`), and print the average latency of 200
 `createItem` calls, so you can see the serialization and transport cost
-directly. `startGrpcServer` and `createNetworkClient` don't care which of
-these they're pointed at -- only the address string passed to them
-changes.
+directly. Swapping an example's transport is a one-line change to which
+enum value it passes in.
 
 ## Migration path
 
 1. **Today**: apps instantiate `InMemoryItemService` directly (current state).
-2. **Step 1** (this repo): apps switch to depending on `ItemServiceApi`
-   and get it from `createLocalClient(impl)` — zero cost, but the seam
-   exists.
-3. **Step 2** (this repo): when co-location no longer holds, swap in
-   `createNetworkClient(address)` instead. Same interface, same call
-   sites — only the client construction line changes.
-4. **Step 3** (future): move `startGrpcServer` into its own deployable
-   process/container; point `createNetworkClient` at its real address.
+2. **Step 1** (this repo): apps switch to depending on `ItemServiceApi` and
+   get one from `createItemServiceClient(ClientTransport.LOCAL)` — zero
+   cost, but the seam exists.
+3. **Step 2** (this repo): when co-location no longer holds, request
+   `ClientTransport.NETWORK` (or `UNIX_DOMAIN_SOCKETS` for same-host IPC)
+   instead. Same interface, same call sites — only the enum value passed
+   to `createItemServiceClient` changes.
+4. **Step 3** (future): move the server side of `createItemServiceClient`'s
+   `NETWORK`/`UNIX_DOMAIN_SOCKETS` cases into its own deployable
+   process/container; point the client at its real address.
 
 ## Running
 
