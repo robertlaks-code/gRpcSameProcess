@@ -1,11 +1,11 @@
-import { ItemServiceClient } from "./types";
+import { ItemServiceApi } from "./types";
 
 /**
- * The same CRUD call sequence, run against whatever ItemServiceClient is
+ * The same CRUD call sequence, run against whatever ItemServiceApi is
  * handed in. Both example apps call this unchanged -- the only difference
  * between them is how the client was constructed (network vs. local).
  */
-export async function runCrudDemo(client: ItemServiceClient, label: string): Promise<void> {
+export async function runCrudDemo(client: ItemServiceApi, label: string): Promise<void> {
   console.log(`\n--- ${label} ---`);
 
   const created = await client.createItem({ name: "widget", payload: "v1" });
@@ -17,7 +17,10 @@ export async function runCrudDemo(client: ItemServiceClient, label: string): Pro
   const updated = await client.updateItem({ id: created.id, name: "widget", payload: "v2" });
   console.log("updated:", updated);
 
-  const listed = await client.listItems({});
+  // pageSize: 0 and pageToken: "" are proto3's zero values -- the generated
+  // request type has no optional fields, so "give me everything from the
+  // start" is spelled out explicitly rather than omitted.
+  const listed = await client.listItems({ pageSize: 0, pageToken: "" });
   console.log("listed:", listed.items.length, "item(s)");
 
   await client.deleteItem({ id: created.id });
@@ -36,7 +39,7 @@ export async function runCrudDemo(client: ItemServiceClient, label: string): Pro
  * network-serialized vs. in-process calls.
  */
 export async function benchmarkCreate(
-  client: ItemServiceClient,
+  client: ItemServiceApi,
   iterations: number
 ): Promise<number> {
   const start = process.hrtime.bigint();

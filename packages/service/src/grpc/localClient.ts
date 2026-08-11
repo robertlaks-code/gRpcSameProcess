@@ -1,10 +1,10 @@
-import { ItemServiceClient } from "../types";
+import { ItemServiceApi } from "../types";
 
 /**
  * An in-process client for when the ItemService implementation lives in the
  * same process and the same trust boundary as the caller.
  *
- * It implements the exact same ItemServiceClient interface as
+ * It implements the exact same ItemServiceApi interface as
  * createNetworkClient, so application code is unchanged if this is later
  * swapped for a real network client -- but every call here is a direct
  * function call into `impl`. There is no proto encoding, no proto decoding,
@@ -15,7 +15,7 @@ import { ItemServiceClient } from "../types";
  * want to keep the client/server seam in the code (for a future move to a
  * real network) without paying serialization cost today.
  */
-export function createLocalClient(impl: ItemServiceClient): ItemServiceClient {
+export function createLocalClient(impl: ItemServiceApi): ItemServiceApi {
   return {
     createItem: (request) => impl.createItem(request),
     getItem: (request) => impl.getItem(request),

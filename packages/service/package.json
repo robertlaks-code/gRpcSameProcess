@@ -5,8 +5,9 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "clean": "rm -rf dist"
+    "generate": "proto-loader-gen-types --longs=Number --enums=String --defaults --oneofs --grpcLib=@grpc/grpc-js --outDir=src/generated proto/crud.proto",
+    "build": "yarn generate && tsc -p tsconfig.json",
+    "clean": "rm -rf dist src/generated"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.10.9",

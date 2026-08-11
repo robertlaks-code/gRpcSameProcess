@@ -7,7 +7,7 @@ import {
 
 /**
  * Client and server are still conceptually separate here -- the app talks
- * to an ItemServiceClient, never to InMemoryItemService directly -- but
+ * to an ItemServiceApi, never to InMemoryItemService directly -- but
  * createLocalClient calls straight into the implementation instead of
  * going through proto encode/decode and a socket. Same call sites as the
  * network example, no serialization cost.

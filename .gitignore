@@ -1,3 +1,7 @@
 node_modules/
 dist/
 *.log
+
+# Generated straight from proto/crud.proto by `yarn build` (proto-loader-gen-types).
+# Not checked in so it can never drift from the .proto.
+packages/service/src/generated/

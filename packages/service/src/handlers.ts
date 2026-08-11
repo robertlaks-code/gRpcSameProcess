@@ -5,7 +5,7 @@ import {
   DeleteItemResponse,
   GetItemRequest,
   Item,
-  ItemServiceClient,
+  ItemServiceApi,
   ListItemsRequest,
   ListItemsResponse,
   UpdateItemRequest,
@@ -28,7 +28,7 @@ export class ItemNotFoundError extends Error {
  * instance of this class -- the server delegates to it over the wire, the
  * fast client delegates to it directly in memory.
  */
-export class InMemoryItemService implements ItemServiceClient {
+export class InMemoryItemService implements ItemServiceApi {
   private readonly items = new Map<string, Item>();
 
   async createItem(request: CreateItemRequest): Promise<Item> {
@@ -79,7 +79,7 @@ export class InMemoryItemService implements ItemServiceClient {
     const all = Array.from(this.items.values()).sort(
       (a, b) => a.createdAt - b.createdAt
     );
-    const pageSize = request.pageSize && request.pageSize > 0 ? request.pageSize : all.length;
+    const pageSize = request.pageSize > 0 ? request.pageSize : all.length;
     const start = request.pageToken ? Number(request.pageToken) : 0;
     const page = all.slice(start, start + pageSize);
     const nextStart = start + page.length;

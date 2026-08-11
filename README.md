@@ -9,20 +9,30 @@ call-site changes.
 - `packages/service/proto/crud.proto` — the service contract (an `ItemService`
   with Create/Get/Update/Delete/List RPCs). This is the one thing that
   doesn't change when the service moves across a network.
+- `packages/service/src/generated/` — TypeScript message types and a typed
+  client/handler contract, generated straight from `crud.proto` by
+  `proto-loader-gen-types` on every `yarn build` (not checked in, so it can
+  never drift from the `.proto`). Run `yarn workspace @grpc-demo/service
+  generate` to regenerate on demand.
 - `packages/service/src/handlers.ts` — `InMemoryItemService`, the actual
   business logic. Transport-agnostic; equivalent to today's "library
   package" that apps instantiate directly.
-- `packages/service/src/types.ts` — `ItemServiceClient`, the interface every
-  transport implements. Application code should depend on this interface,
-  not on any specific transport.
-- `packages/service/src/grpc/server.ts` — wraps an `ItemServiceClient` impl
-  as a real `@grpc/grpc-js` server.
+- `packages/service/src/types.ts` — `ItemServiceApi`, the one hand-written
+  interface in this package. It's a thin Promise-based re-statement of the
+  generated message types, and every transport implements it. Application
+  code should depend on this interface, not on any specific transport, or
+  on the generated (callback-based) client type directly.
+- `packages/service/src/grpc/server.ts` — wraps an `ItemServiceApi` impl as
+  a real `@grpc/grpc-js` server, typed against the generated
+  `ItemServiceHandlers` contract so a renamed or changed rpc fails to
+  compile here instead of failing at runtime.
 - `packages/service/src/grpc/networkClient.ts` — a real gRPC client
-  (`createNetworkClient(address)`). Proto-encodes requests, sends them over
-  a socket, proto-decodes responses. This is what a client in a different
-  process, or on a different machine, would use.
+  (`createNetworkClient(address)`), built on the generated
+  `ItemServiceClient`. Proto-encodes requests, sends them over a socket,
+  proto-decodes responses. This is what a client in a different process, or
+  on a different machine, would use.
 - `packages/service/src/grpc/localClient.ts` — an in-process client
-  (`createLocalClient(impl)`) that implements the same `ItemServiceClient`
+  (`createLocalClient(impl)`) that implements the same `ItemServiceApi`
   interface but calls straight into the implementation — no proto
   encode/decode, no socket.
 - `examples/network-client-server` — server and client in one process,
@@ -37,7 +47,7 @@ Both examples run the identical CRUD sequence (`runCrudDemo` in
 ## Migration path
 
 1. **Today**: apps instantiate `InMemoryItemService` directly (current state).
-2. **Step 1** (this repo): apps switch to depending on `ItemServiceClient`
+2. **Step 1** (this repo): apps switch to depending on `ItemServiceApi`
    and get it from `createLocalClient(impl)` — zero cost, but the seam
    exists.
 3. **Step 2** (this repo): when co-location no longer holds, swap in
