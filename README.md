@@ -1,6 +1,6 @@
 # gRPC CRUD service: same-process today, network-ready tomorrow
 
-A yarn-workspaces monorepo demonstrating three ways to talk to the same
+A yarn-workspaces monorepo demonstrating four ways to talk to the same
 CRUD service, so the service can move out-of-process later without any
 call-site changes.
 
@@ -36,13 +36,21 @@ call-site changes.
   interface but calls straight into the implementation — no proto
   encode/decode, no socket.
 - `examples/network-client-server` — server and client in one process,
-  talking over a real loopback gRPC socket.
+  talking over a real TCP loopback gRPC socket.
+- `examples/unix-socket-client-server` — server and client in one process,
+  talking over a real gRPC socket again, but bound to a Unix domain socket
+  (a temp file under the OS tmp dir) instead of TCP. Still full proto
+  serialization, just without the TCP/IP stack -- a common choice for
+  same-host IPC.
 - `examples/in-process-fast-client` — server and client in one process,
   talking through the zero-serialization local client.
 
-Both examples run the identical CRUD sequence (`runCrudDemo` in
+All three examples run the identical CRUD sequence (`runCrudDemo` in
 `packages/service/src/demo.ts`) and print the average latency of 200
-`createItem` calls, so you can see the serialization cost directly.
+`createItem` calls, so you can see the serialization and transport cost
+directly. `startGrpcServer` and `createNetworkClient` don't care which of
+these they're pointed at -- only the address string passed to them
+changes.
 
 ## Migration path
 
@@ -62,22 +70,20 @@ Both examples run the identical CRUD sequence (`runCrudDemo` in
 yarn install
 yarn build
 
-yarn start:network   # client <-> server over a real loopback gRPC socket
-yarn start:local      # client <-> server in-process, no serialization
+yarn start:network   # client <-> server over a real TCP loopback gRPC socket
+yarn start:unix      # client <-> server over a real Unix domain socket
+yarn start:local     # client <-> server in-process, no serialization
 ```
 
-Sample output from `yarn start:network` includes lines like:
+Sample average `createItem` latency across the three, from an actual run:
 
 ```
-average createItem latency over network client: 0.227ms
+network client (TCP loopback):    0.241ms
+unix socket client:                0.212ms
+local client (in-process):         0.001ms
 ```
 
-and from `yarn start:local`:
-
-```
-average createItem latency over local client: 0.001ms
-```
-
-The gap is the proto encode/decode + socket round-trip cost that
-`createLocalClient` skips while keeping the same client/server
-architecture.
+TCP and the Unix socket are both real proto serialization over a real
+socket, so they land in the same ballpark -- the Unix socket skips the
+TCP/IP stack but still pays the encode/decode cost. The in-process client
+skips serialization entirely, which is the rest of the gap.

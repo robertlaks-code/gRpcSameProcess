@@ -8,8 +8,9 @@
     "examples/*"
   ],
   "scripts": {
-    "build": "yarn workspace @grpc-demo/service build && yarn workspace @grpc-demo/network-client-server build && yarn workspace @grpc-demo/in-process-fast-client build",
+    "build": "yarn workspace @grpc-demo/service build && yarn workspace @grpc-demo/network-client-server build && yarn workspace @grpc-demo/unix-socket-client-server build && yarn workspace @grpc-demo/in-process-fast-client build",
     "start:network": "yarn workspace @grpc-demo/network-client-server start",
+    "start:unix": "yarn workspace @grpc-demo/unix-socket-client-server start",
     "start:local": "yarn workspace @grpc-demo/in-process-fast-client start"
   },
   "devDependencies": {

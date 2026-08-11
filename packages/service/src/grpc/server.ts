@@ -34,12 +34,13 @@ function toGrpcHandler<TReq, TRes>(
 
 /**
  * Starts a real gRPC server that delegates every RPC to `impl`. Bind this to
- * any address today (localhost, for the in-process demo) and to a real
+ * any address today -- a TCP loopback address for the network demo, a
+ * `unix://` path for the Unix domain socket demo -- and to a real
  * externally-reachable address once the service is split out of the app.
  *
- * The `satisfies ItemServiceHandlers` check below is generated straight from
- * the .proto -- if a method is renamed or its signature changes there,
- * this file fails to compile instead of failing at runtime.
+ * The `ItemServiceHandlers` type below is generated straight from the
+ * .proto -- if a method is renamed or its signature changes there, this
+ * file fails to compile instead of failing at runtime.
  */
 export function startGrpcServer(
   impl: ItemServiceApi,
@@ -65,7 +66,12 @@ export function startGrpcServer(
         reject(err);
         return;
       }
-      resolve({ server, address: `127.0.0.1:${port}` });
+      // For TCP, `address` is typically "host:0" (an ephemeral port) --
+      // the real bound port only comes back from the bindAsync callback.
+      // For a unix:// target there's no port to resolve; the address the
+      // caller asked to bind is already the concrete, connectable target.
+      const boundAddress = address.startsWith("unix:") ? address : `127.0.0.1:${port}`;
+      resolve({ server, address: boundAddress });
     });
   });
 }
